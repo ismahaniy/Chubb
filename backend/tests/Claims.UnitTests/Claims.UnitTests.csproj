@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Claims.Domain\Claims.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Claims.Application\Claims.Application.csproj" />
+  </ItemGroup>
+</Project>

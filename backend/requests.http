@@ -144,3 +144,152 @@ Content-Type: application/json
 {
   "answer": "Police report reference PR-2026-0415."
 }
+
+# ======================================================================
+# Officer slice. Run the claimant section first: it uses {{submitted}}
+# (claimant1's new SG motor claim) and the claimant1 token.
+# Commands need the officer assigned to the claim; anyone else gets 403.
+# ======================================================================
+
+### Log in as officer1
+# @name officer1
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "officer1@claimdesk.test",
+  "password": "Passw0rd!"
+}
+
+### Log in as officer2
+# @name officer2
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "officer2@claimdesk.test",
+  "password": "Passw0rd!"
+}
+
+### officer1 picks up the submitted claim: 200, UnderReview
+POST {{api}}/api/claims/{{submitted.response.body.id}}/assign
+Authorization: Bearer {{officer1.response.body.accessToken}}
+X-Correlation-Id: demo-assign-1
+
+### officer2 tries to pick up the same claim: 409 (already taken)
+POST {{api}}/api/claims/{{submitted.response.body.id}}/assign
+Authorization: Bearer {{officer2.response.body.accessToken}}
+
+### officer2 working officer1's claim: 403
+POST {{api}}/api/claims/{{submitted.response.body.id}}/information-requests
+Authorization: Bearer {{officer2.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "question": "Not my claim."
+}
+
+### Ask the claimant for information: 200, AwaitingInformation, request in openInformationRequests
+# @name infoRequested
+POST {{api}}/api/claims/{{submitted.response.body.id}}/information-requests
+Authorization: Bearer {{officer1.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "question": "Please upload photos of the damage and the workshop quotation."
+}
+
+### claimant1 answers: back to UnderReview
+POST {{api}}/api/claims/{{submitted.response.body.id}}/information-requests/{{infoRequested.response.body.openInformationRequests[0].id}}/response
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "answer": "Photos and quotation uploaded."
+}
+
+### Decision before a reserve is recorded: 409
+POST {{api}}/api/claims/{{submitted.response.body.id}}/decision
+Authorization: Bearer {{officer1.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "outcome": "Rejected",
+  "reason": "Too early."
+}
+
+### Record the reserve and notes (status unchanged)
+POST {{api}}/api/claims/{{submitted.response.body.id}}/assessment
+Authorization: Bearer {{officer1.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "reserveAmount": 1200.00,
+  "currency": "SGD",
+  "notes": "Workshop quotation checked against photos."
+}
+
+### Approve without an amount: 400 validation ProblemDetails
+POST {{api}}/api/claims/{{submitted.response.body.id}}/decision
+Authorization: Bearer {{officer1.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "outcome": "Approved",
+  "reason": "Covered loss."
+}
+
+### Approve: 200, Approved (amount must be in the claim currency and within the maximum payable)
+POST {{api}}/api/claims/{{submitted.response.body.id}}/decision
+Authorization: Bearer {{officer1.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "outcome": "Approved",
+  "approvedAmount": 1200.00,
+  "currency": "SGD",
+  "reason": "Covered loss; amount agreed with the workshop."
+}
+
+### Settle: 200, Settled. Sending it again gives 409.
+POST {{api}}/api/claims/{{submitted.response.body.id}}/settle
+Authorization: Bearer {{officer1.response.body.accessToken}}
+
+### Reject example: claimant1 submits a second claim
+# @name submitted2
+POST {{api}}/api/claims
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "policyNumber": "POL-SG-0002",
+  "productType": "Property",
+  "incidentDate": "{{$localDatetime 'YYYY-MM-DD' -1 d}}",
+  "description": "Ceiling stain from a slow leak over several months.",
+  "claimedAmount": 900.00,
+  "currency": "SGD"
+}
+
+### officer1 assigns it
+POST {{api}}/api/claims/{{submitted2.response.body.id}}/assign
+Authorization: Bearer {{officer1.response.body.accessToken}}
+
+### ...records a reserve
+POST {{api}}/api/claims/{{submitted2.response.body.id}}/assessment
+Authorization: Bearer {{officer1.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "reserveAmount": 900.00,
+  "currency": "SGD"
+}
+
+### ...and rejects it: 200, Rejected (a rejection takes no amount)
+POST {{api}}/api/claims/{{submitted2.response.body.id}}/decision
+Authorization: Bearer {{officer1.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "outcome": "Rejected",
+  "reason": "Gradual leaks are excluded by the policy wording."
+}

@@ -50,6 +50,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer, JwtTokenIssuer>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ClaimantClaimService>();
+builder.Services.AddScoped<OfficerClaimService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICorrelationContext, HttpCorrelationContext>();
 builder.Services.AddInfrastructure(builder.Configuration);

@@ -9,6 +9,9 @@ export const NOTIFICATION_POLL_MS = 15_000;
 
 type NotificationView = Schemas['NotificationView'];
 
+/** Pass to reloadOnNotification / latestFor to react to a notification about any claim (e.g. a claim list). */
+export const ANY_CLAIM = '*';
+
 /**
  * The signed-in user's notifications, polled for the whole session.
  *
@@ -48,9 +51,9 @@ export class NotificationStore {
       .subscribe(() => this.list.reload());
   }
 
-  /** Newest notification time about the claim. */
+  /** Newest notification time about the claim (or about any claim, for ANY_CLAIM). */
   latestFor(claimId: string): string | undefined {
-    return this.latestByClaim().get(claimId);
+    return claimId === ANY_CLAIM ? this.items()[0]?.createdAt : this.latestByClaim().get(claimId);
   }
 
   /**

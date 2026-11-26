@@ -13,6 +13,9 @@ public sealed class OfficerClaimService(
     IUnitOfWork unitOfWork,
     TimeProvider clock)
 {
+    public Task<QueuePage> GetQueueAsync(Actor actor, QueueQuery query, CancellationToken cancellationToken) =>
+        claims.GetQueueAsync(query, actor.UserId, clock.GetUtcNow(), cancellationToken);
+
     /// <summary>
     /// Two officers racing for the same claim: the loser either sees it already UnderReview (DomainException) or
     /// loses the xmin check on save (DbUpdateConcurrencyException). Both map to 409.

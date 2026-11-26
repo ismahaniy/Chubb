@@ -7,6 +7,9 @@ namespace Claims.Infrastructure.Claims;
 
 internal sealed class ClaimRepository(ClaimsDbContext db) : IClaimRepository
 {
+    // An officer's own claims that still need work. Approved stays here because it still has to be settled.
+    private static readonly ClaimStatus[] MineStatuses = [ClaimStatus.UnderReview, ClaimStatus.AwaitingInformation, ClaimStatus.Approved];
+
     public Task<string> NextClaimNumberAsync(CancellationToken cancellationToken) =>
         ClaimNumberSequence.NextAsync(db, cancellationToken);
 
@@ -75,4 +78,48 @@ internal sealed class ClaimRepository(ClaimsDbContext db) : IClaimRepository
                     .ToList()))
             .AsSplitQuery()
             .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task<QueuePage> GetQueueAsync(QueueQuery query, Guid officerId, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var claims = query.Scope switch
+        {
+            QueueScope.Unassigned => db.Claims.Where(c => c.AssignedOfficerId == null),
+            QueueScope.Mine => db.Claims.Where(c => c.AssignedOfficerId == officerId && MineStatuses.Contains(c.Status)),
+            _ => throw new ArgumentOutOfRangeException(nameof(query), query.Scope, null),
+        };
+
+        if (query.Market is { } market)
+        {
+            claims = claims.Where(c => c.Market == market);
+        }
+
+        if (query.Status is { } status)
+        {
+            claims = claims.Where(c => c.Status == status);
+        }
+
+        claims = claims.AsNoTracking();
+        var total = await claims.CountAsync(cancellationToken);
+        var items = await claims
+            .Join(db.Policies, c => c.PolicyId, p => p.Id, (c, p) => new { Claim = c, p.PolicyNumber })
+            .OrderBy(x => x.Claim.SlaDueAt)
+            .ThenBy(x => x.Claim.Id) // v7 ids: a stable tie-break, so pages never overlap
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .Select(x => new QueueItem(
+                x.Claim.Id,
+                x.Claim.ClaimNumber,
+                x.PolicyNumber,
+                x.Claim.Market,
+                x.Claim.ProductType,
+                x.Claim.Status,
+                new MoneyDto(x.Claim.ClaimedAmount.Amount, x.Claim.ClaimedAmount.Currency),
+                x.Claim.AssignedOfficerId,
+                x.Claim.SubmittedAt,
+                x.Claim.SlaDueAt,
+                x.Claim.SlaDueAt < now && Claim.OpenStatuses.Contains(x.Claim.Status)))
+            .ToListAsync(cancellationToken);
+
+        return new QueuePage(items, query.Page, query.PageSize, total);
+    }
 }

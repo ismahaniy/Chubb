@@ -15,4 +15,7 @@ public interface IClaimRepository
     Task<IReadOnlyList<ClaimSummary>> ListSummariesByClaimantAsync(Guid claimantId, CancellationToken cancellationToken);
 
     Task<ClaimDetail?> GetDetailAsync(Guid claimId, CancellationToken cancellationToken);
+
+    /// <summary>One page of an officer's work queue, most urgent SLA first. <paramref name="now"/> decides SLA breaches.</summary>
+    Task<QueuePage> GetQueueAsync(QueueQuery query, Guid officerId, DateTimeOffset now, CancellationToken cancellationToken);
 }

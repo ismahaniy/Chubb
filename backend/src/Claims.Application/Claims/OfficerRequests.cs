@@ -5,6 +5,14 @@ namespace Claims.Application.Claims;
 
 // Value types are nullable so [Required] can tell "missing" from a default value; the service unwraps them.
 
+/// <summary>Filters and paging for the officer queue. The controller validates the query string (page from 1, page size 1-100).</summary>
+public sealed record QueueQuery(
+    QueueScope Scope = QueueScope.Unassigned,
+    Market? Market = null,
+    ClaimStatus? Status = null,
+    int Page = 1,
+    int PageSize = 20);
+
 public sealed record InformationRequestRequest(
     [Required, MaxLength(2000)] string Question);
 

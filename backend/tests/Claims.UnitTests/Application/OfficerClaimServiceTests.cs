@@ -28,6 +28,16 @@ public sealed class OfficerClaimServiceTests
     }
 
     [Fact]
+    public async Task Queue_passes_the_officer_and_the_current_time_to_the_repository()
+    {
+        var query = new QueueQuery(QueueScope.Mine);
+
+        await _service.GetQueueAsync(AssignedOfficer, query, Ct);
+
+        await _claims.Received(1).GetQueueAsync(query, OfficerId, Now, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Unknown_claim_is_not_found()
     {
         _claims.GetForUpdateAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns((Claim?)null);

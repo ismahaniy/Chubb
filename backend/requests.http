@@ -171,6 +171,14 @@ Content-Type: application/json
   "password": "Passw0rd!"
 }
 
+### Unassigned queue (default scope), most urgent SLA first; seeded claims are slaBreached: true
+GET {{api}}/api/claims/queue
+Authorization: Bearer {{officer1.response.body.accessToken}}
+
+### Unassigned Singapore claims, first page of 5
+GET {{api}}/api/claims/queue?scope=unassigned&market=Singapore&page=1&pageSize=5
+Authorization: Bearer {{officer1.response.body.accessToken}}
+
 ### officer1 picks up the submitted claim: 200, UnderReview
 POST {{api}}/api/claims/{{submitted.response.body.id}}/assign
 Authorization: Bearer {{officer1.response.body.accessToken}}
@@ -179,6 +187,10 @@ X-Correlation-Id: demo-assign-1
 ### officer2 tries to pick up the same claim: 409 (already taken)
 POST {{api}}/api/claims/{{submitted.response.body.id}}/assign
 Authorization: Bearer {{officer2.response.body.accessToken}}
+
+### officer1's own queue (UnderReview, AwaitingInformation, Approved), filtered by status
+GET {{api}}/api/claims/queue?scope=mine&status=UnderReview
+Authorization: Bearer {{officer1.response.body.accessToken}}
 
 ### officer2 working officer1's claim: 403
 POST {{api}}/api/claims/{{submitted.response.body.id}}/information-requests

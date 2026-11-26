@@ -1,11 +1,13 @@
+using System.ComponentModel.DataAnnotations;
 using Claims.Api.Auth;
 using Claims.Application.Claims;
+using Claims.Domain;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Claims.Api.Controllers;
 
-/// <summary>Officer claim transitions. Only the assigned officer may act on a claim after assignment.</summary>
+/// <summary>The officer work queue and claim transitions. Only the assigned officer may act on a claim after assignment.</summary>
 [ApiController]
 [Route("api/claims")]
 [Authorize(Policies.Officer)]
@@ -13,6 +15,22 @@ namespace Claims.Api.Controllers;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json")]
 public sealed class OfficerClaimsController(OfficerClaimService officerClaims) : ControllerBase
 {
+    /// <summary>
+    /// Work queue, most urgent SLA first. scope=unassigned lists claims nobody has picked up; scope=mine lists the
+    /// signed-in officer's claims that still need work. slaBreached marks open claims past their SLA due date.
+    /// </summary>
+    [HttpGet("queue")]
+    [ProducesResponseType<QueuePage>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    public async Task<ActionResult<QueuePage>> Queue(
+        CancellationToken cancellationToken,
+        QueueScope scope = QueueScope.Unassigned,
+        Market? market = null,
+        ClaimStatus? status = null,
+        [Range(1, int.MaxValue)] int page = 1,
+        [Range(1, 100)] int pageSize = 20) =>
+        await officerClaims.GetQueueAsync(User.ToActor(), new QueueQuery(scope, market, status, page, pageSize), cancellationToken);
+
     /// <summary>Pick up a submitted claim; it moves to UnderReview. 409 if another officer already took it.</summary>
     [HttpPost("{id:guid}/assign")]
     [ProducesResponseType<ClaimDetail>(StatusCodes.Status200OK)]

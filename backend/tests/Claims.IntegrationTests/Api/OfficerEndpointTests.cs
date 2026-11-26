@@ -202,14 +202,90 @@ public sealed class OfficerEndpointTests(ApiFactory factory)
     }
 
     [Fact]
-    public async Task Claimant_cannot_assign()
+    public async Task Claimant_cannot_see_the_queue_or_assign()
     {
         var claimId = await SubmitAsync();
         using var claimant = await LoginAsync(Claimant2);
 
+        using var queue = await claimant.GetAsync("/api/claims/queue", Ct);
         using var assign = await claimant.PostAsync(AssignUrl(claimId), null, Ct);
 
+        queue.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
         assign.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
+    // ---- GET /api/claims/queue ----
+
+    [Fact]
+    public async Task Unassigned_queue_is_sorted_by_sla_and_flags_breaches()
+    {
+        var freshId = await SubmitAsync();
+        using var officer = await LoginAsync(Officer1);
+
+        var page = await QueueAsync(officer, "scope=unassigned&market=Philippines&pageSize=100");
+
+        page.Items.ShouldAllBe(i => i.Market == Market.Philippines && i.Status == ClaimStatus.Submitted && i.AssignedOfficerId == null);
+        page.Items.Select(i => i.SlaDueAt).ShouldBeInOrder(SortDirection.Ascending);
+        page.Items.Single(i => i.Id == freshId).SlaBreached.ShouldBeFalse();
+
+        // The seeded Philippines claim was submitted 10 days ago: 3 days past its 7-day SLA.
+        var seeded = page.Items.First();
+        seeded.SubmittedAt.ShouldBeLessThan(DateTimeOffset.UtcNow.AddDays(-9));
+        seeded.SlaDueAt.ShouldBe(seeded.SubmittedAt.AddDays(7));
+        seeded.SlaBreached.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Assigned_claim_moves_from_unassigned_to_the_officers_own_queue()
+    {
+        var claimId = await SubmitAsync();
+        using var officer1 = await LoginAsync(Officer1);
+        using var officer2 = await LoginAsync(Officer2);
+        (await PostOkAsync(officer1, AssignUrl(claimId), null)).Status.ShouldBe(ClaimStatus.UnderReview);
+
+        var unassigned = await QueueAsync(officer1, "scope=unassigned&market=Philippines&pageSize=100");
+        var mine = await QueueAsync(officer1, "scope=mine&market=Philippines&pageSize=100");
+        var mineUnderReview = await QueueAsync(officer1, "scope=mine&market=Philippines&status=UnderReview&pageSize=100");
+        var mineApproved = await QueueAsync(officer1, "scope=mine&market=Philippines&status=Approved&pageSize=100");
+        var othersMine = await QueueAsync(officer2, "scope=mine&market=Philippines&pageSize=100");
+
+        unassigned.Items.ShouldNotContain(i => i.Id == claimId);
+        mine.Items.ShouldContain(i => i.Id == claimId && i.AssignedOfficerId != null);
+        mineUnderReview.Items.ShouldContain(i => i.Id == claimId);
+        mineApproved.Items.ShouldNotContain(i => i.Id == claimId);
+        othersMine.Items.ShouldNotContain(i => i.Id == claimId);
+    }
+
+    [Fact]
+    public async Task Pages_continue_each_other_and_the_total_counts_every_match()
+    {
+        for (var i = 0; i < 3; i++)
+        {
+            await SubmitAsync();
+        }
+
+        using var officer = await LoginAsync(Officer1);
+        const string filter = "scope=unassigned&market=Philippines";
+
+        var all = await QueueAsync(officer, $"{filter}&pageSize=100");
+        var page1 = await QueueAsync(officer, $"{filter}&page=1&pageSize=2");
+        var page2 = await QueueAsync(officer, $"{filter}&page=2&pageSize=2");
+
+        all.TotalCount.ShouldBe(all.Items.Count);
+        page1.TotalCount.ShouldBe(all.TotalCount);
+        page1.Items.Select(i => i.Id).ShouldBe(all.Items.Take(2).Select(i => i.Id));
+        page2.Items.Select(i => i.Id).ShouldBe(all.Items.Skip(2).Take(2).Select(i => i.Id));
+        (page2.Page, page2.PageSize).ShouldBe((2, 2));
+    }
+
+    [Fact]
+    public async Task Page_size_above_100_is_400()
+    {
+        using var officer = await LoginAsync(Officer1);
+
+        using var response = await officer.GetAsync("/api/claims/queue?pageSize=101", Ct);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
     // ---- helpers ----
@@ -244,6 +320,9 @@ public sealed class OfficerEndpointTests(ApiFactory factory)
         response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
         return (await response.Content.ReadFromJsonAsync<ClaimDetail>(Json, Ct))!;
     }
+
+    private static async Task<QueuePage> QueueAsync(HttpClient client, string queryString) =>
+        (await client.GetFromJsonAsync<QueuePage>($"/api/claims/queue?{queryString}", Json, Ct))!;
 
     private Task<Guid> UserIdAsync(string email) =>
         WithDbAsync(db => db.Users.Where(u => u.Email == email).Select(u => u.Id).SingleAsync(Ct));

@@ -41,5 +41,6 @@ internal sealed class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         // Officer work queues and manager dashboards.
         b.HasIndex(c => new { c.Status, c.AssignedOfficerId });
         b.HasIndex(c => new { c.Market, c.Status });
+        b.HasIndex(c => new { c.AssignedOfficerId, c.SlaDueAt });
     }
 }

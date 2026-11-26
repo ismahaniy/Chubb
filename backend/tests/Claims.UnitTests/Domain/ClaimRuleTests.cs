@@ -80,6 +80,21 @@ public sealed class ClaimRuleTests
     }
 
     [Fact]
+    public void Sla_is_due_seven_days_after_submission_and_does_not_move()
+    {
+        var claim = SubmittedClaim();
+
+        claim.SlaDueAt.ShouldBe(Now.AddDays(7));
+        claim.SlaDueAt.Offset.ShouldBe(TimeSpan.Zero);
+
+        claim.Assign(OfficerId, Now.AddDays(1));
+        claim.RequestInformation(OfficerId, "Photos please.", Now.AddDays(2));
+        claim.ProvideInformation(OpenRequestId(claim), ClaimantId, "Sent.", Now.AddDays(5));
+
+        claim.SlaDueAt.ShouldBe(Now.AddDays(7));
+    }
+
+    [Fact]
     public void Submit_for_a_product_the_policy_does_not_cover_throws() =>
         Should.Throw<DomainException>(() =>
             Claim.Submit(ClaimNumber, Policy(), ClaimantId, ProductType.Property, IncidentDate, "x", Money(100m), Now))

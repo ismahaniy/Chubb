@@ -7,6 +7,12 @@ namespace Claims.Domain;
 /// </summary>
 public sealed class Claim
 {
+    /// <summary>Every claim must be decided within this time of submission.</summary>
+    public static readonly TimeSpan SlaTarget = TimeSpan.FromDays(7);
+
+    /// <summary>Claims still waiting on a decision. The SLA clock runs only while a claim is in one of these.</summary>
+    public static readonly ClaimStatus[] OpenStatuses = [ClaimStatus.Submitted, ClaimStatus.UnderReview, ClaimStatus.AwaitingInformation];
+
     private readonly List<InformationRequest> _informationRequests = [];
     private readonly List<ClaimStatusHistory> _statusHistory = [];
     private readonly List<IDomainEvent> _domainEvents = [];
@@ -30,6 +36,9 @@ public sealed class Claim
     public string? AssessmentNotes { get; private set; }
     public ClaimDecision? Decision { get; private set; }
     public DateTimeOffset SubmittedAt { get; private set; }
+
+    /// <summary>When a decision is due: <see cref="SubmittedAt"/> plus <see cref="SlaTarget"/>, fixed at submission.</summary>
+    public DateTimeOffset SlaDueAt { get; private set; }
 
     public IReadOnlyList<InformationRequest> InformationRequests => _informationRequests;
     public IReadOnlyList<ClaimStatusHistory> StatusHistory => _statusHistory;
@@ -101,6 +110,7 @@ public sealed class Claim
             MaxPayable = policy.MaxPayable,
             SubmittedAt = now.ToUniversalTime(),
         };
+        claim.SlaDueAt = claim.SubmittedAt + SlaTarget;
 
         claim._statusHistory.Add(new ClaimStatusHistory(claim.Id, null, ClaimStatus.Submitted, claimantId, claim.SubmittedAt));
         claim.Status = ClaimStatus.Submitted;

@@ -76,6 +76,10 @@ namespace Claims.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(32)")
                         .HasColumnName("product_type");
 
+                    b.Property<DateTimeOffset>("SlaDueAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sla_due_at");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -141,9 +145,6 @@ namespace Claims.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_claims");
 
-                    b.HasIndex("AssignedOfficerId")
-                        .HasDatabaseName("ix_claims_assigned_officer_id");
-
                     b.HasIndex("ClaimNumber")
                         .IsUnique()
                         .HasDatabaseName("ix_claims_claim_number");
@@ -153,6 +154,9 @@ namespace Claims.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("PolicyId")
                         .HasDatabaseName("ix_claims_policy_id");
+
+                    b.HasIndex("AssignedOfficerId", "SlaDueAt")
+                        .HasDatabaseName("ix_claims_assigned_officer_id_sla_due_at");
 
                     b.HasIndex("Market", "Status")
                         .HasDatabaseName("ix_claims_market_status");

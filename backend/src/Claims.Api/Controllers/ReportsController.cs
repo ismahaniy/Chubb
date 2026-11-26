@@ -21,4 +21,10 @@ public sealed class ReportsController(ReportService reports) : ControllerBase
     [ProducesResponseType<ExposureReport>(StatusCodes.Status200OK)]
     public async Task<ActionResult<ExposureReport>> Exposure(CancellationToken cancellationToken) =>
         await reports.GetExposureAsync(cancellationToken);
+
+    /// <summary>Per officer: open claims, SLA breaches, and claims settled in the last 7 days.</summary>
+    [HttpGet("workload")]
+    [ProducesResponseType<WorkloadReport>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<WorkloadReport>> Workload(CancellationToken cancellationToken) =>
+        await reports.GetWorkloadAsync(cancellationToken);
 }

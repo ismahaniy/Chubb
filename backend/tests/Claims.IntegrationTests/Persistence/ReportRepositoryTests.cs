@@ -59,6 +59,36 @@ public sealed class ReportRepositoryTests(PostgresFixture fixture) : IClassFixtu
         (await ExposureAsync()).ShouldBe(before);
     }
 
+    // ---- workload ----
+
+    [Fact]
+    public async Task Workload_counts_open_claims_sla_breaches_and_recent_settlements()
+    {
+        var officer = new User("report.officer@claimdesk.test", "Report Officer", Role.Officer, "not-a-real-hash");
+        await using (var db = fixture.CreateDbContext())
+        {
+            db.Users.Add(officer);
+            await db.SaveChangesAsync(Ct);
+        }
+
+        await AddClaimsAsync(Market.Thailand, ProductType.Property, (policy, number) =>
+        [
+            Build(number(), policy, 100m, Now.AddDays(-10), ClaimStatus.UnderReview, officer.Id),               // open, breached
+            Build(number(), policy, 100m, Now.AddDays(-10), ClaimStatus.Approved, officer.Id, reserve: 100m),   // open; decided, so no breach
+            Build(number(), policy, 100m, Now.AddDays(-1), ClaimStatus.UnderReview, officer.Id),                // open, within SLA
+            Build(number(), policy, 100m, Now.AddDays(-1), ClaimStatus.Settled, officer.Id, reserve: 100m),     // settled in window
+            Build(number(), policy, 100m, Now.AddDays(-8), ClaimStatus.Settled, officer.Id, reserve: 100m),     // settled too long ago
+        ]);
+
+        var workload = await WithRepositoryAsync(r => r.GetWorkloadAsync(Now, Ct));
+
+        workload.Single(w => w.OfficerId == officer.Id).ShouldBe(new OfficerWorkload(officer.Id, "Report Officer", 3, 1, 1));
+        await using (var db = fixture.CreateDbContext())
+        {
+            workload.Count.ShouldBe(await db.Users.CountAsync(u => u.Role == Role.Officer, Ct)); // idle officers too
+        }
+    }
+
     // ---- helpers ----
 
     private static bool IsSingaporeMotor(ExposureLine line) => line is { Market: Market.Singapore, ProductType: ProductType.Motor };

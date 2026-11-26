@@ -325,6 +325,10 @@ Content-Type: application/json
 GET {{api}}/api/reports/exposure
 Authorization: Bearer {{manager.response.body.accessToken}}
 
+### Workload per officer: open claims, SLA breaches, settled in the last 7 days
+GET {{api}}/api/reports/workload
+Authorization: Bearer {{manager.response.body.accessToken}}
+
 ### officer1 reading a report: 403
 GET {{api}}/api/reports/exposure
 Authorization: Bearer {{officer1.response.body.accessToken}}

@@ -8,4 +8,10 @@ public sealed class ReportService(IReportRepository reports, TimeProvider clock)
         var now = clock.GetUtcNow();
         return new ExposureReport(now, await reports.GetExposureAsync(cancellationToken));
     }
+
+    public async Task<WorkloadReport> GetWorkloadAsync(CancellationToken cancellationToken)
+    {
+        var now = clock.GetUtcNow();
+        return new WorkloadReport(now, await reports.GetWorkloadAsync(now, cancellationToken));
+    }
 }

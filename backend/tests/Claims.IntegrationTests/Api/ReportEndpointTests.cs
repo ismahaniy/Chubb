@@ -34,9 +34,21 @@ public sealed class ReportEndpointTests(ApiFactory factory)
         report.Lines.ShouldAllBe(l => l.OpenClaims > 0 && l.Exposure.Amount > 0);
     }
 
+    [Fact]
+    public async Task Manager_gets_workload_for_every_seeded_officer()
+    {
+        using var manager = await LoginAsync("manager@claimdesk.test");
+
+        var report = (await manager.GetFromJsonAsync<WorkloadReport>("/api/reports/workload", Json, Ct))!;
+
+        report.Officers.Select(o => o.Name).ShouldBe(["Kenji Sato", "Marco Reyes", "Nadia Halim", "Priya Menon"]);
+    }
+
     [Theory]
     [InlineData("officer1@claimdesk.test", "/api/reports/exposure")]
+    [InlineData("officer1@claimdesk.test", "/api/reports/workload")]
     [InlineData("claimant1@claimdesk.test", "/api/reports/exposure")]
+    [InlineData("claimant1@claimdesk.test", "/api/reports/workload")]
     public async Task Only_managers_can_read_reports(string email, string url)
     {
         using var client = await LoginAsync(email);

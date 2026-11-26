@@ -13,3 +13,11 @@ public sealed record ExposureLine(Market Market, ProductType ProductType, int Op
 
 /// <summary>Exposure lines ordered by market, product and currency.</summary>
 public sealed record ExposureReport(DateTimeOffset AsOf, IReadOnlyList<ExposureLine> Lines);
+
+/// <param name="OpenClaims">Assigned claims not yet Rejected or Settled.</param>
+/// <param name="SlaBreaches">Assigned claims still awaiting a decision and past their SLA due date.</param>
+/// <param name="SettledLast7Days">Claims this officer settled in the 7 days up to the report time.</param>
+public sealed record OfficerWorkload(Guid OfficerId, string Name, int OpenClaims, int SlaBreaches, int SettledLast7Days);
+
+/// <summary>Every officer, including those with no work, ordered by name.</summary>
+public sealed record WorkloadReport(DateTimeOffset AsOf, IReadOnlyList<OfficerWorkload> Officers);

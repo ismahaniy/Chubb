@@ -13,6 +13,12 @@ public sealed class Claim
     /// <summary>Claims still waiting on a decision. The SLA clock runs only while a claim is in one of these.</summary>
     public static readonly ClaimStatus[] OpenStatuses = [ClaimStatus.Submitted, ClaimStatus.UnderReview, ClaimStatus.AwaitingInformation];
 
+    /// <summary>
+    /// Final states: no transition leaves them. Every other claim is still outstanding liability and still officer work;
+    /// that includes Approved, which has not been paid until it is Settled.
+    /// </summary>
+    public static readonly ClaimStatus[] ClosedStatuses = [ClaimStatus.Rejected, ClaimStatus.Settled];
+
     private readonly List<InformationRequest> _informationRequests = [];
     private readonly List<ClaimStatusHistory> _statusHistory = [];
     private readonly List<IDomainEvent> _domainEvents = [];

@@ -4,6 +4,7 @@ using Claims.Application.Common;
 using Claims.Application.Reports;
 using Claims.Infrastructure.Claims;
 using Claims.Infrastructure.Health;
+using Claims.Infrastructure.Notifications;
 using Claims.Infrastructure.Outbox;
 using Claims.Infrastructure.Persistence;
 using Claims.Infrastructure.Policies;
@@ -45,6 +46,7 @@ public static class DependencyInjection
 
         // Worker side (the API never resolves these: it does not produce to Kafka).
         services.AddScoped<OutboxDispatcher>();
+        services.AddScoped<NotificationProjection>();
 
         // Long-lived Kafka clients (librdkafka reconnects by itself); built on first use, disposed by the container.
         services.AddSingleton<IAdminClient>(sp =>

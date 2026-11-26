@@ -10,6 +10,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ICorrelationContext, NoCorrelationContext>();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHostedService<OutboxPublisher>();
+builder.Services.AddHostedService<NotificationProjector>();
 
 var host = builder.Build();
 

@@ -6,5 +6,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Claims.Api\Claims.Api.csproj" />
+    <!-- Aliased: Api and Worker both get a public top-level Program, which would be ambiguous here. -->
+    <ProjectReference Include="..\..\src\Claims.Worker\Claims.Worker.csproj" Aliases="worker" />
   </ItemGroup>
 </Project>

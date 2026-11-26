@@ -3,10 +3,12 @@ import { ChangeDetectionStrategy, Component, effect, inject, input, signal } fro
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ToastStore } from '../../../core/errors/toast.store';
+import { ClaimFacts } from '../../../shared/ui/claim-facts';
+import { DecisionSummary } from '../../../shared/ui/decision-summary';
 import { Money } from '../../../shared/ui/money';
 import { StatusBadge } from '../../../shared/ui/status-badge';
+import { Timeline } from '../../../shared/ui/timeline';
 import { DecisionPanel } from '../ui/decision-panel';
-import { Timeline } from '../ui/timeline';
 import { WorkbenchStore } from '../workbench.store';
 
 const INPUT_CLASSES =
@@ -14,7 +16,17 @@ const INPUT_CLASSES =
 
 @Component({
   selector: 'app-workbench-page',
-  imports: [DatePipe, ReactiveFormsModule, RouterLink, Money, StatusBadge, Timeline, DecisionPanel],
+  imports: [
+    DatePipe,
+    ReactiveFormsModule,
+    RouterLink,
+    ClaimFacts,
+    DecisionSummary,
+    Money,
+    StatusBadge,
+    Timeline,
+    DecisionPanel,
+  ],
   providers: [WorkbenchStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -30,51 +42,10 @@ const INPUT_CLASSES =
 
       <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
-          <section class="rounded-lg border border-neutral-200 bg-white p-5">
-            <h3 class="mb-3 text-sm font-semibold">Claim details</h3>
-            <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
-              <div>
-                <dt class="text-neutral-500">Policy</dt>
-                <dd>{{ claim.policyNumber }}</dd>
-              </div>
-              <div>
-                <dt class="text-neutral-500">Market</dt>
-                <dd>{{ claim.market }}</dd>
-              </div>
-              <div>
-                <dt class="text-neutral-500">Product</dt>
-                <dd>{{ claim.productType }}</dd>
-              </div>
-              <div>
-                <dt class="text-neutral-500">Incident date</dt>
-                <dd>{{ claim.incidentDate | date: 'mediumDate' }}</dd>
-              </div>
-              <div>
-                <dt class="text-neutral-500">Submitted</dt>
-                <dd>{{ claim.submittedAt | date: 'medium' }}</dd>
-              </div>
-              <div></div>
-              <div>
-                <dt class="text-neutral-500">Claimed</dt>
-                <dd><app-money [value]="claim.claimedAmount" /></dd>
-              </div>
-              <div>
-                <dt class="text-neutral-500">Maximum payable</dt>
-                <dd><app-money [value]="claim.maxPayable" /></dd>
-              </div>
-            </dl>
-            <p class="mt-4 text-sm whitespace-pre-line text-neutral-800">{{ claim.description }}</p>
-          </section>
+          <app-claim-facts [claim]="claim" />
 
           @if (claim.decision; as decision) {
-            <section class="rounded-lg border border-neutral-200 bg-white p-5 text-sm">
-              <h3 class="mb-2 font-semibold">Decision: {{ decision.outcome }}</h3>
-              @if (decision.approvedAmount; as amount) {
-                <p>Approved amount: <app-money [value]="amount" /></p>
-              }
-              <p class="mt-1 text-neutral-700">{{ decision.reason }}</p>
-              <p class="mt-1 text-xs text-neutral-500">{{ decision.decidedAt | date: 'medium' }}</p>
-            </section>
+            <app-decision-summary [decision]="decision" />
           }
 
           @if (claim.openInformationRequests.length > 0) {

@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import type { Schemas } from '../../../core/api/api';
-import { STATUS_DISPLAY } from '../../../shared/ui/status-badge';
+import type { Schemas } from '../../core/api/api';
+import { STATUS_DISPLAY } from './status-badge';
 
 /** Status history, newest first. */
 @Component({

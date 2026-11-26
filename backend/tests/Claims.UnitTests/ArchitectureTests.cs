@@ -7,6 +7,7 @@ public sealed class ArchitectureTests
     [Theory]
     [InlineData("Claims.Domain")]
     [InlineData("Claims.Application", "Claims.Domain")]
+    [InlineData("Claims.Infrastructure", "Claims.Application", "Claims.Domain")]
     public void Layer_references_only_inner_layers(string assemblyName, params string[] allowed)
     {
         var claimsReferences = Assembly.Load(assemblyName)

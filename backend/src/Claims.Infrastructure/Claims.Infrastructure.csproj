@@ -1,5 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <!-- Shared framework, not a NuGet package: provides PasswordHasher<T> and IConfiguration. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="EFCore.NamingConventions" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Claims.Application\Claims.Application.csproj" />
     <ProjectReference Include="..\Claims.Domain\Claims.Domain.csproj" />
   </ItemGroup>

@@ -1,12 +1,13 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import type { Schemas } from '../../../core/api/api';
+import { MarketLabelPipe } from '../../../shared/ui/markets';
 import { Money } from '../../../shared/ui/money';
 import { StatusBadge } from '../../../shared/ui/status-badge';
 
 @Component({
   selector: 'app-queue-table',
-  imports: [DatePipe, Money, StatusBadge],
+  imports: [DatePipe, MarketLabelPipe, Money, StatusBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
@@ -32,7 +33,7 @@ import { StatusBadge } from '../../../shared/ui/status-badge';
                 <div class="font-medium text-neutral-900">{{ item.claimNumber }}</div>
                 <div class="text-xs text-neutral-500">{{ item.policyNumber }}</div>
               </td>
-              <td class="px-3 py-2">{{ item.market }}</td>
+              <td class="px-3 py-2">{{ item.market | marketLabel }}</td>
               <td class="px-3 py-2">{{ item.productType }}</td>
               <td class="px-3 py-2"><app-status-badge [status]="item.status" /></td>
               <td class="px-3 py-2 text-right"><app-money [value]="item.claimedAmount" /></td>

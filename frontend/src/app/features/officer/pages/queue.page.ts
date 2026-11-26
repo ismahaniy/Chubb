@@ -1,22 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import type { Schemas } from '../../../core/api/api';
+import { MARKET_LABELS } from '../../../shared/ui/markets';
 import { STATUS_DISPLAY } from '../../../shared/ui/status-badge';
 import { QUEUE_POLL_MS, QueueStore } from '../queue.store';
 import { QueueTable } from '../ui/queue-table';
 
 type Market = Schemas['Market'];
 type ClaimStatus = Schemas['ClaimStatus'];
-
-/** `Record<Market, …>` makes the compiler flag a market added to the API. */
-const MARKET_LABELS: Record<Market, string> = {
-  Singapore: 'Singapore',
-  HongKong: 'Hong Kong',
-  Malaysia: 'Malaysia',
-  Thailand: 'Thailand',
-  Indonesia: 'Indonesia',
-  Philippines: 'Philippines',
-};
 
 /** The statuses the "Mine" scope can contain (see QueueScope.Mine on the API). */
 const MINE_STATUSES: readonly ClaimStatus[] = ['UnderReview', 'AwaitingInformation', 'Approved'];

@@ -27,7 +27,9 @@ Time box: 5 hours hard cap. Backend matters most. Build only what the current ph
   Angular default test runner (Vitest)
 - Allowed backend packages: Npgsql.EntityFrameworkCore.PostgreSQL, EFCore.NamingConventions,
   Confluent.Kafka, Microsoft.AspNetCore.Authentication.JwtBearer, Microsoft.AspNetCore.OpenApi,
-  Microsoft.Extensions.ApiDescription.Server, Scalar.AspNetCore, plus the test packages above
+  Microsoft.Extensions.ApiDescription.Server, Scalar.AspNetCore, plus the test packages above;
+  Microsoft.EntityFrameworkCore.Design (Claims.Api, PrivateAssets=all, design-time only);
+  local tool dotnet-ef (repo-root dotnet-tools.json)
 - Not allowed: MediatR, AutoMapper, FluentAssertions v8, FluentValidation, Drizzle, NgRx
 
 ## Repository layout
@@ -99,6 +101,7 @@ Api and Worker reference Infrastructure only to register services.
 
 ## Commands
 
+- Tools (once): `dotnet tool restore`
 - Infra + app: `docker compose up -d --build`
 - Backend dev: `dotnet watch --project backend/src/Claims.Api`
 - Migration: `dotnet ef migrations add <Name> -p backend/src/Claims.Infrastructure -s backend/src/Claims.Api`

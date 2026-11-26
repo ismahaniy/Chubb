@@ -43,17 +43,28 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IPasswordVerifier, PasswordVerifier>();
 
-        // One long-lived admin client (librdkafka reconnects by itself); built on first use, disposed by the container.
+        // Worker side (the API never resolves these: it does not produce to Kafka).
+        services.AddScoped<OutboxDispatcher>();
+
+        // Long-lived Kafka clients (librdkafka reconnects by itself); built on first use, disposed by the container.
         services.AddSingleton<IAdminClient>(sp =>
-        {
-            var bootstrapServers = sp.GetRequiredService<IConfiguration>()[KafkaBootstrapServersKey]
-                ?? throw new InvalidOperationException($"'{KafkaBootstrapServersKey}' is not configured.");
-            var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("Kafka");
-            return new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers })
-                .SetLogHandler((_, message) => logger.Log(
-                    (LogLevel)message.LevelAs(LogLevelType.MicrosoftExtensionsLogging), "{Facility}: {Message}", message.Facility, message.Message))
-                .Build();
-        });
+            new AdminClientBuilder(new AdminClientConfig { BootstrapServers = BootstrapServers(sp) })
+                .SetLogHandler((_, message) => LogKafka(sp, message))
+                .Build());
+
+        // One producer for the outbox and the dead-letter topic. Acks=All + idempotence: no loss, and no duplicates
+        // or reordering from the client's own retries. A short message timeout makes an outage fail fast, so the
+        // publisher releases its row locks and backs off instead of waiting librdkafka's default five minutes.
+        services.AddSingleton<IProducer<string, string>>(sp =>
+            new ProducerBuilder<string, string>(new ProducerConfig
+            {
+                BootstrapServers = BootstrapServers(sp),
+                Acks = Acks.All,
+                EnableIdempotence = true,
+                MessageTimeoutMs = 5_000,
+            })
+                .SetLogHandler((_, message) => LogKafka(sp, message))
+                .Build());
 
         services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>("database", timeout: HealthCheckTimeout)
@@ -61,4 +72,13 @@ public static class DependencyInjection
 
         return services;
     }
+
+    public static string BootstrapServers(IServiceProvider services) =>
+        services.GetRequiredService<IConfiguration>()[KafkaBootstrapServersKey]
+            ?? throw new InvalidOperationException($"'{KafkaBootstrapServersKey}' is not configured.");
+
+    /// <summary>librdkafka's own log lines, at their own level, under the "Kafka" category.</summary>
+    public static void LogKafka(IServiceProvider services, LogMessage message) =>
+        services.GetRequiredService<ILoggerFactory>().CreateLogger("Kafka").Log(
+            (LogLevel)message.LevelAs(LogLevelType.MicrosoftExtensionsLogging), "{Facility}: {Message}", message.Facility, message.Message);
 }

@@ -1,5 +1,7 @@
 using Claims.Application.Auth;
+using Claims.Application.Common;
 using Claims.Infrastructure.Health;
+using Claims.Infrastructure.Outbox;
 using Claims.Infrastructure.Persistence;
 using Claims.Infrastructure.Security;
 using Claims.Infrastructure.Users;
@@ -29,6 +31,8 @@ public static class DependencyInjection
             .UseAsyncSeeding(DbSeeder.SeedAsync));
 
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IOutbox, EfOutbox>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IPasswordVerifier, PasswordVerifier>();
 
         // One long-lived admin client (librdkafka reconnects by itself); built on first use, disposed by the container.

@@ -27,6 +27,7 @@ public sealed class ClaimPersistenceTests(PostgresFixture fixture) : IClassFixtu
             claim.ProvideInformation(claim.InformationRequests[^1].Id, claim.ClaimantId, "Quote attached.", Now.AddMinutes(3));
             claim.RecordAssessment(officerId, Money(claim, 900.50m), "Quote checked.", Now.AddMinutes(4));
             claim.Approve(officerId, Money(claim, 900.50m), "Covered loss.", Now.AddMinutes(5));
+            claim.ClearDomainEvents(); // persistence only; the outbox is covered by the API tests
             await db.SaveChangesAsync(Ct);
         }
 
@@ -69,6 +70,20 @@ public sealed class ClaimPersistenceTests(PostgresFixture fixture) : IClassFixtu
     }
 
     [Fact]
+    public async Task Saving_a_claim_whose_events_were_not_added_to_the_outbox_throws()
+    {
+        await using var db = fixture.CreateDbContext();
+        var policy = await db.Policies.FirstAsync(Ct);
+        var claim = NewClaim(await ClaimNumberSequence.NextAsync(db, Ct), policy);
+        claim.Assign(await db.Users.Where(u => u.Role == Role.Officer).Select(u => u.Id).FirstAsync(Ct), Now.AddMinutes(1));
+
+        db.Claims.Add(claim);
+
+        var ex = await Should.ThrowAsync<InvalidOperationException>(() => db.SaveChangesAsync(Ct));
+        ex.Message.ShouldContain(claim.ClaimNumber);
+    }
+
+    [Fact]
     public async Task Duplicate_claim_number_is_rejected_by_the_database()
     {
         await using var db = fixture.CreateDbContext();
@@ -94,9 +109,11 @@ public sealed class ClaimPersistenceTests(PostgresFixture fixture) : IClassFixtu
         var claimB = await LoadAsync(second, claimId);
 
         claimA.Assign(officerId, Now.AddMinutes(1));
+        claimA.ClearDomainEvents();
         await first.SaveChangesAsync(Ct);
 
         claimB.Assign(officerId, Now.AddMinutes(2));
+        claimB.ClearDomainEvents();
         await Should.ThrowAsync<DbUpdateConcurrencyException>(() => second.SaveChangesAsync(Ct));
     }
 
@@ -116,7 +133,9 @@ public sealed class ClaimPersistenceTests(PostgresFixture fixture) : IClassFixtu
     {
         // Seeded policies run from a year ago to a year ahead, so yesterday is always covered.
         var incidentDate = DateOnly.FromDateTime(Now.UtcDateTime.AddDays(-1));
-        return Claim.Submit(number, policy, policy.HolderId, policy.ProductType, incidentDate, "Test claim", new Money(1_234.56m, policy.Currency), Now);
+        var claim = Claim.Submit(number, policy, policy.HolderId, policy.ProductType, incidentDate, "Test claim", new Money(1_234.56m, policy.Currency), Now);
+        claim.ClearDomainEvents();
+        return claim;
     }
 
     private static Task<Claim> LoadAsync(ClaimsDbContext db, Guid claimId) =>

@@ -27,6 +27,25 @@ public sealed class ClaimsDbContext(DbContextOptions<ClaimsDbContext> options) :
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ClaimsDbContext).Assembly);
     }
 
+    /// <summary>
+    /// Refuses to save a claim whose domain events were never staged in the outbox (IOutbox.Enqueue): saving would
+    /// silently lose them. Every SaveChangesAsync overload funnels into this one.
+    /// </summary>
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        var unstaged = ChangeTracker.Entries<Claim>()
+            .Where(e => e.Entity.DomainEvents.Count > 0)
+            .Select(e => e.Entity.ClaimNumber)
+            .ToList();
+        if (unstaged.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Claim(s) {string.Join(", ", unstaged)} have domain events that were not added to the outbox.");
+        }
+
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         // Enums are stored by name so the database stays readable and reordering members is safe.

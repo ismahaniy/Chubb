@@ -5,6 +5,7 @@ using Claims.Api.Errors;
 using Claims.Api.Observability;
 using Claims.Api.OpenApi;
 using Claims.Application.Auth;
+using Claims.Application.Common;
 using Claims.Infrastructure;
 using Claims.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -47,6 +48,8 @@ builder.Services.AddAuthorizationBuilder().AddClaimsPolicies();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer, JwtTokenIssuer>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICorrelationContext, HttpCorrelationContext>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();

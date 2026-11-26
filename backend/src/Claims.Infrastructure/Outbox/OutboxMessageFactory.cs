@@ -8,7 +8,8 @@ internal static class OutboxMessageFactory
 {
     public const int Version = 1;
 
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
+    /// <summary>The published JSON format (camelCase, enums as names). Also used to read envelopes and payloads back.</summary>
+    internal static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter() },
     };

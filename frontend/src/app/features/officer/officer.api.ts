@@ -1,8 +1,9 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_BASE_URL, Schemas } from '../../core/api/api';
 import type { paths } from '../../core/api/api-types';
+import { SILENT_ERRORS } from '../../core/errors/error.interceptor';
 
 export type QueueQuery = NonNullable<paths['/api/claims/queue']['get']['parameters']['query']>;
 type ClaimDetail = Schemas['ClaimDetail'];
@@ -17,7 +18,11 @@ export class OfficerApi {
     for (const [key, value] of Object.entries(query)) {
       if (value !== undefined && value !== null) params = params.set(key, String(value));
     }
-    return this.http.get<Schemas['QueuePage']>(`${this.baseUrl}/claims/queue`, { params });
+    // Polled: the queue page shows its own "retrying" banner instead of a toast every 10 s.
+    return this.http.get<Schemas['QueuePage']>(`${this.baseUrl}/claims/queue`, {
+      params,
+      context: new HttpContext().set(SILENT_ERRORS, true),
+    });
   }
 
   get(id: string): Observable<ClaimDetail> {

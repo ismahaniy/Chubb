@@ -1,10 +1,16 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { Schemas } from '../api/api';
 import { AuthStore } from '../auth/auth.store';
 import { Toast, ToastStore } from './toast.store';
+
+/**
+ * Set on background requests (polling) that show their own inline error state: a failure is not toasted, so an
+ * outage does not raise a new toast every few seconds. A 401 still ends the session.
+ */
+export const SILENT_ERRORS = new HttpContextToken<boolean>(() => false);
 
 /**
  * Turns failed API calls into toasts (RFC 7807 ProblemDetails when the body has one) and rethrows,
@@ -22,7 +28,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           auth.logout();
           void router.navigate(['/login']);
           toasts.show({ kind: 'error', title: 'Your session has ended. Please sign in again.' });
-        } else {
+        } else if (!req.context.get(SILENT_ERRORS)) {
           toasts.show(describe(error));
         }
       }

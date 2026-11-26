@@ -1,0 +1,32 @@
+@api = http://localhost:5000
+
+### Health (anonymous)
+GET {{api}}/health
+
+### Log in as a seeded officer (every demo user's password is Passw0rd!)
+# Other users: claimant1@ / claimant2@ / officer1..4@ / manager@claimdesk.test
+# @name login
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "officer1@claimdesk.test",
+  "password": "Passw0rd!"
+}
+
+### Who am I? Uses the token from the login request above
+GET {{api}}/api/auth/me
+Authorization: Bearer {{login.response.body.accessToken}}
+
+### No token: 401 ProblemDetails
+GET {{api}}/api/auth/me
+
+### Wrong password: 401 ProblemDetails (same answer as an unknown email)
+POST {{api}}/api/auth/login
+Content-Type: application/json
+X-Correlation-Id: demo-wrong-password
+
+{
+  "email": "officer1@claimdesk.test",
+  "password": "wrong"
+}

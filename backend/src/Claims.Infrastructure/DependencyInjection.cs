@@ -1,4 +1,7 @@
+using Claims.Application.Auth;
 using Claims.Infrastructure.Persistence;
+using Claims.Infrastructure.Security;
+using Claims.Infrastructure.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +21,9 @@ public static class DependencyInjection
             .UseNpgsql(connectionString)
             .UseSnakeCaseNamingConvention()
             .UseAsyncSeeding(DbSeeder.SeedAsync));
+
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddSingleton<IPasswordVerifier, PasswordVerifier>();
 
         return services;
     }

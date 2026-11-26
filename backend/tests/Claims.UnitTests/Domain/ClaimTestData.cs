@@ -27,7 +27,7 @@ internal static class ClaimTestData
     public static Money Money(decimal amount) => new(amount, Currency);
 
     public static Claim SubmittedClaim() =>
-        Claim.Submit(ClaimNumber, Policy(), ClaimantId, IncidentDate, "Rear-ended at a junction", Money(3_000m), Now);
+        Claim.Submit(ClaimNumber, Policy(), ClaimantId, ProductType.Motor, IncidentDate, "Rear-ended at a junction", Money(3_000m), Now);
 
     /// <summary>
     /// A claim in <paramref name="status"/> reached by the legal path. Claims at UnderReview or beyond

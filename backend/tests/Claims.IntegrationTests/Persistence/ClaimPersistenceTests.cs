@@ -116,7 +116,7 @@ public sealed class ClaimPersistenceTests(PostgresFixture fixture) : IClassFixtu
     {
         // Seeded policies run from a year ago to a year ahead, so yesterday is always covered.
         var incidentDate = DateOnly.FromDateTime(Now.UtcDateTime.AddDays(-1));
-        return Claim.Submit(number, policy, policy.HolderId, incidentDate, "Test claim", new Money(1_234.56m, policy.Currency), Now);
+        return Claim.Submit(number, policy, policy.HolderId, policy.ProductType, incidentDate, "Test claim", new Money(1_234.56m, policy.Currency), Now);
     }
 
     private static Task<Claim> LoadAsync(ClaimsDbContext db, Guid claimId) =>

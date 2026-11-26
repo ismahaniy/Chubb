@@ -143,7 +143,7 @@ public static class DbSeeder
 
         var claimantId = policy.HolderId;
         var incidentDate = DateOnly.FromDateTime(submittedAt.UtcDateTime.AddDays(-2));
-        var claim = Claim.Submit(claimNumber, policy, claimantId, incidentDate, seed.Description, Amount(seed.Claimed), at);
+        var claim = Claim.Submit(claimNumber, policy, claimantId, policy.ProductType, incidentDate, seed.Description, Amount(seed.Claimed), at);
         if (seed.Status == ClaimStatus.Submitted)
         {
             return claim;

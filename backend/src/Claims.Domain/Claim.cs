@@ -45,6 +45,7 @@ public sealed class Claim
         string claimNumber,
         Policy policy,
         Guid claimantId,
+        ProductType productType,
         DateOnly incidentDate,
         string description,
         Money claimedAmount,
@@ -53,6 +54,22 @@ public sealed class Claim
         if (policy.HolderId != claimantId)
         {
             throw new DomainException("Only the policy holder can submit a claim on this policy.");
+        }
+
+        if (productType != policy.ProductType)
+        {
+            throw new DomainException($"Policy {policy.PolicyNumber} covers {policy.ProductType} claims, not {productType}.");
+        }
+
+        var today = MarketClock.Today(policy.Market, now);
+        if (!policy.Covers(today))
+        {
+            throw new DomainException($"Policy {policy.PolicyNumber} is not active.");
+        }
+
+        if (incidentDate > today)
+        {
+            throw new DomainException("The incident date cannot be in the future.");
         }
 
         if (!policy.Covers(incidentDate))

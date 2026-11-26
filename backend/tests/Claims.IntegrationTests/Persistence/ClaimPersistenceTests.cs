@@ -24,7 +24,7 @@ public sealed class ClaimPersistenceTests(PostgresFixture fixture) : IClassFixtu
             var claim = await LoadAsync(db, claimId);
             claim.Assign(officerId, Now.AddMinutes(1));
             claim.RequestInformation(officerId, "Please send the repair quote.", Now.AddMinutes(2));
-            claim.ProvideInformation(claim.ClaimantId, "Quote attached.", Now.AddMinutes(3));
+            claim.ProvideInformation(claim.InformationRequests[^1].Id, claim.ClaimantId, "Quote attached.", Now.AddMinutes(3));
             claim.RecordAssessment(officerId, Money(claim, 900.50m), "Quote checked.", Now.AddMinutes(4));
             claim.Approve(officerId, Money(claim, 900.50m), "Covered loss.", Now.AddMinutes(5));
             await db.SaveChangesAsync(Ct);

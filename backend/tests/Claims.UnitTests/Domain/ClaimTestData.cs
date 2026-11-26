@@ -26,6 +26,9 @@ internal static class ClaimTestData
 
     public static Money Money(decimal amount) => new(amount, Currency);
 
+    /// <summary>The newest information request's id, or a random id when there is none (the action must then fail on status).</summary>
+    public static Guid OpenRequestId(Claim claim) => claim.InformationRequests.LastOrDefault()?.Id ?? Guid.CreateVersion7();
+
     public static Claim SubmittedClaim() =>
         Claim.Submit(ClaimNumber, Policy(), ClaimantId, ProductType.Motor, IncidentDate, "Rear-ended at a junction", Money(3_000m), Now);
 

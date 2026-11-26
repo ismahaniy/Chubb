@@ -154,7 +154,7 @@ public static class DbSeeder
         if (seed.AnsweredRequest)
         {
             claim.RequestInformation(officerId, "Please upload photos of the damage and the repair quotation.", Next());
-            claim.ProvideInformation(claimantId, "Photos and the quotation are attached.", Next());
+            claim.ProvideInformation(claim.InformationRequests[^1].Id, claimantId, "Photos and the quotation are attached.", Next());
         }
 
         if (seed.Status == ClaimStatus.AwaitingInformation)

@@ -244,7 +244,7 @@ public sealed class ClaimRuleTests
         var request = claim.InformationRequests.ShouldHaveSingleItem();
         request.IsOpen.ShouldBeTrue();
 
-        claim.ProvideInformation(ClaimantId, "Attached.", Now.AddHours(2));
+        claim.ProvideInformation(OpenRequestId(claim), ClaimantId, "Attached.", Now.AddHours(2));
 
         request.IsOpen.ShouldBeFalse();
         request.Answer.ShouldBe("Attached.");
@@ -255,7 +255,26 @@ public sealed class ClaimRuleTests
     public void Blank_question_or_answer_throws()
     {
         Should.Throw<DomainException>(() => ClaimIn(ClaimStatus.UnderReview).RequestInformation(OfficerId, " ", Now));
-        Should.Throw<DomainException>(() => ClaimIn(ClaimStatus.AwaitingInformation).ProvideInformation(ClaimantId, "", Now));
+
+        var awaiting = ClaimIn(ClaimStatus.AwaitingInformation);
+        Should.Throw<DomainException>(() => awaiting.ProvideInformation(OpenRequestId(awaiting), ClaimantId, "", Now));
+    }
+
+    [Fact]
+    public void Answering_an_old_request_throws_and_leaves_the_open_one_open()
+    {
+        var claim = ClaimIn(ClaimStatus.UnderReview);
+        claim.RequestInformation(OfficerId, "Photos?", Now);
+        var first = claim.InformationRequests[^1];
+        claim.ProvideInformation(first.Id, ClaimantId, "Sent.", Now);
+        claim.RequestInformation(OfficerId, "Police report?", Now);
+        var second = claim.InformationRequests[^1];
+
+        Should.Throw<DomainException>(() => claim.ProvideInformation(first.Id, ClaimantId, "Again.", Now));
+
+        second.IsOpen.ShouldBeTrue();
+        first.Answer.ShouldBe("Sent.");
+        claim.Status.ShouldBe(ClaimStatus.AwaitingInformation);
     }
 
     // ---- Full path ----
@@ -266,7 +285,7 @@ public sealed class ClaimRuleTests
         var claim = SubmittedClaim();
         claim.Assign(OfficerId, Now);
         claim.RequestInformation(OfficerId, "Photos?", Now);
-        claim.ProvideInformation(ClaimantId, "Sent.", Now);
+        claim.ProvideInformation(OpenRequestId(claim), ClaimantId, "Sent.", Now);
         claim.RecordAssessment(OfficerId, Money(2_000m), null, Now);
         claim.Approve(OfficerId, Money(1_800m), "Covered", Now);
         claim.Settle(OfficerId, Now);

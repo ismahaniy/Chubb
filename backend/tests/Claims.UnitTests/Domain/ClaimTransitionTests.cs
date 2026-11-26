@@ -104,7 +104,7 @@ public sealed class ClaimTransitionTests
                 claim.RequestInformation(OfficerId, "Please send photos of the damage.", Now);
                 break;
             case ClaimAction.ProvideInformation:
-                claim.ProvideInformation(ClaimantId, "Photos attached.", Now);
+                claim.ProvideInformation(OpenRequestId(claim), ClaimantId, "Photos attached.", Now);
                 break;
             case ClaimAction.RecordAssessment:
                 claim.RecordAssessment(OfficerId, Money(2_800m), null, Now);

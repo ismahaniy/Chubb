@@ -130,14 +130,19 @@ public sealed class Claim
         _domainEvents.Add(new InformationRequested(Id, now, request.Id, officerId, question));
     }
 
-    public void ProvideInformation(Guid claimantId, string answer, DateTimeOffset now)
+    public void ProvideInformation(Guid requestId, Guid claimantId, string answer, DateTimeOffset now)
     {
         EnsureStatus(ClaimStatus.AwaitingInformation, "given information");
         answer = Required(answer, nameof(answer));
-        now = now.ToUniversalTime();
 
         // The state machine guarantees exactly one open request while AwaitingInformation.
         var request = _informationRequests.Single(r => r.IsOpen);
+        if (request.Id != requestId)
+        {
+            throw new DomainException("Only the open information request can be answered.");
+        }
+
+        now = now.ToUniversalTime();
         request.Answered(answer, now);
         MoveTo(ClaimStatus.UnderReview, claimantId, now);
         _domainEvents.Add(new InformationProvided(Id, now, request.Id, claimantId));

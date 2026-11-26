@@ -42,6 +42,40 @@ public sealed class NotificationEndpointTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task Mark_read_marks_only_the_callers_notifications_up_to_the_given_time()
+    {
+        // Times far apart and away from "now", so notifications other tests add cannot fall in between.
+        var seen = DateTimeOffset.UtcNow.AddDays(-30);
+        var older = await AddNotificationAsync(Claimant1, "older", seen);
+        var newer = await AddNotificationAsync(Claimant1, "newer", DateTimeOffset.UtcNow.AddDays(30));
+        var theirs = await AddNotificationAsync(Claimant2, "theirs", seen);
+
+        using var client = await LoginAsync(Claimant1);
+        using var response = await client.PostAsJsonAsync("/api/notifications/read", new MarkNotificationsReadRequest(seen), Json, Ct);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        var firstReadAt = await ReadAtAsync(older);
+        firstReadAt.ShouldNotBeNull();
+        (await ReadAtAsync(newer)).ShouldBeNull();
+        (await ReadAtAsync(theirs)).ShouldBeNull();
+
+        // Idempotent: a repeat keeps the first read time.
+        using var again = await client.PostAsJsonAsync("/api/notifications/read", new MarkNotificationsReadRequest(seen), Json, Ct);
+        again.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        (await ReadAtAsync(older)).ShouldBe(firstReadAt);
+    }
+
+    [Fact]
+    public async Task Mark_read_without_upTo_is_400()
+    {
+        using var client = await LoginAsync(Claimant1);
+
+        using var response = await client.PostAsJsonAsync("/api/notifications/read", new { }, Json, Ct);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Without_a_token_it_is_401()
     {
         using var client = factory.CreateClient();
@@ -51,14 +85,23 @@ public sealed class NotificationEndpointTests(ApiFactory factory)
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    private async Task AddNotificationAsync(string email, string message)
+    private async Task<Guid> AddNotificationAsync(string email, string message, DateTimeOffset? createdAt = null)
     {
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ClaimsDbContext>();
         var userId = await db.Users.Where(u => u.Email == email).Select(u => u.Id).SingleAsync(Ct);
         var claimId = await db.Claims.Where(c => c.ClaimantId == userId).Select(c => c.Id).FirstAsync(Ct);
-        db.Notifications.Add(new Notification(userId, claimId, message, DateTimeOffset.UtcNow));
+        var notification = new Notification(userId, claimId, message, createdAt ?? DateTimeOffset.UtcNow);
+        db.Notifications.Add(notification);
         await db.SaveChangesAsync(Ct);
+        return notification.Id;
+    }
+
+    private async Task<DateTimeOffset?> ReadAtAsync(Guid notificationId)
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ClaimsDbContext>();
+        return await db.Notifications.Where(n => n.Id == notificationId).Select(n => n.ReadAt).SingleAsync(Ct);
     }
 
     private async Task<HttpClient> LoginAsync(string email)

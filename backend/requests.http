@@ -344,9 +344,26 @@ Authorization: Bearer {{officer1.response.body.accessToken}}
 # Any role; each user sees only their own.
 # ======================================================================
 
-### claimant1: received / under review / more info needed / approved / settled, newest first
+### claimant1: received / under review / more info needed / approved / settled, newest first (readAt null)
+# @name claimant1Notifications
 GET {{api}}/api/notifications
 Authorization: Bearer {{claimant1.response.body.accessToken}}
+
+### claimant1 marks everything up to the newest one seen as read: 204. Re-run the list: readAt is set.
+POST {{api}}/api/notifications/read
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "upTo": "{{claimant1Notifications.response.body.$[0].createdAt}}"
+}
+
+### Mark read without upTo: 400 validation ProblemDetails
+POST {{api}}/api/notifications/read
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+Content-Type: application/json
+
+{}
 
 ### officer1: "the claimant answered your information request"
 GET {{api}}/api/notifications

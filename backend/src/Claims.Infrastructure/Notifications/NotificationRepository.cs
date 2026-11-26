@@ -1,4 +1,5 @@
 using Claims.Application.Notifications;
+using Claims.Domain;
 using Claims.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,5 +15,10 @@ internal sealed class NotificationRepository(ClaimsDbContext db) : INotification
             .ThenByDescending(n => n.Id)
             .Take(limit)
             .Select(n => new NotificationView(n.Id, n.ClaimId, n.Message, n.CreatedAt, n.ReadAt))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Notification>> ListUnreadForUpdateAsync(Guid recipientId, DateTimeOffset upTo, CancellationToken cancellationToken) =>
+        await db.Notifications
+            .Where(n => n.RecipientId == recipientId && n.ReadAt == null && n.CreatedAt <= upTo)
             .ToListAsync(cancellationToken);
 }

@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable, firstValueFrom } from 'rxjs';
 import type { Schemas } from '../../core/api/api';
+import { reloadOnNotification } from '../../core/notifications/notification.store';
 import { OfficerApi } from './officer.api';
 
 type ClaimDetail = Schemas['ClaimDetail'];
@@ -39,6 +40,11 @@ export class WorkbenchStore {
   /** Request information, record an assessment and decide all need UnderReview. */
   readonly canWork = computed(() => this.status() === 'UnderReview');
   readonly canSettle = computed(() => this.status() === 'Approved');
+
+  constructor() {
+    // E.g. the claimant answered an information request: show it without a manual refresh.
+    reloadOnNotification(this.claimId, () => this.claim.reload());
+  }
 
   select(id: string): void {
     this.claimId.set(id);

@@ -1,16 +1,22 @@
 using Claims.Application.Auth;
+using Claims.Infrastructure.Health;
 using Claims.Infrastructure.Persistence;
 using Claims.Infrastructure.Security;
 using Claims.Infrastructure.Users;
+using Confluent.Kafka;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Claims.Infrastructure;
 
 public static class DependencyInjection
 {
     public const string ConnectionStringName = "Claims";
+    public const string KafkaBootstrapServersKey = "Kafka:BootstrapServers";
+
+    private static readonly TimeSpan HealthCheckTimeout = TimeSpan.FromSeconds(3);
 
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
@@ -24,6 +30,22 @@ public static class DependencyInjection
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddSingleton<IPasswordVerifier, PasswordVerifier>();
+
+        // One long-lived admin client (librdkafka reconnects by itself); built on first use, disposed by the container.
+        services.AddSingleton<IAdminClient>(sp =>
+        {
+            var bootstrapServers = sp.GetRequiredService<IConfiguration>()[KafkaBootstrapServersKey]
+                ?? throw new InvalidOperationException($"'{KafkaBootstrapServersKey}' is not configured.");
+            var logger = sp.GetRequiredService<ILoggerFactory>().CreateLogger("Kafka");
+            return new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers })
+                .SetLogHandler((_, message) => logger.Log(
+                    (LogLevel)message.LevelAs(LogLevelType.MicrosoftExtensionsLogging), "{Facility}: {Message}", message.Facility, message.Message))
+                .Build();
+        });
+
+        services.AddHealthChecks()
+            .AddCheck<DatabaseHealthCheck>("database", timeout: HealthCheckTimeout)
+            .AddCheck<KafkaHealthCheck>("kafka", timeout: HealthCheckTimeout);
 
         return services;
     }

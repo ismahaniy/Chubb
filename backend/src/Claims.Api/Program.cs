@@ -6,12 +6,14 @@ using Claims.Application.Auth;
 using Claims.Infrastructure;
 using Claims.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Enums as strings for controllers and for minimal endpoints.
+// Enums as strings for controllers and for everything else (minimal endpoints, /health writer).
 builder.Services.AddControllers()
     .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
@@ -31,7 +33,6 @@ builder.Services.AddAuthorizationBuilder().AddClaimsPolicies();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccessTokenIssuer, JwtTokenIssuer>();
 builder.Services.AddScoped<AuthService>();
-builder.Services.AddHealthChecks();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
@@ -52,6 +53,15 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHealthChecks("/health").AllowAnonymous();
+app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = WriteHealthReport }).AllowAnonymous();
 
 await app.RunAsync();
+
+static Task WriteHealthReport(HttpContext context, HealthReport report) =>
+    context.Response.WriteAsJsonAsync(new
+    {
+        status = report.Status,
+        checks = report.Entries.ToDictionary(
+            e => e.Key,
+            e => new { status = e.Value.Status, description = e.Value.Description, durationMs = (int)e.Value.Duration.TotalMilliseconds }),
+    });

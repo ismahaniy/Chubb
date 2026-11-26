@@ -1,6 +1,6 @@
 @api = http://localhost:5000
 
-### Health (anonymous)
+### Health (anonymous): overall status plus database and kafka checks
 GET {{api}}/health
 
 ### Log in as a seeded officer (every demo user's password is Passw0rd!)

@@ -6,6 +6,7 @@
   <ItemGroup>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="Confluent.Kafka" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Claims.Application\Claims.Application.csproj" />

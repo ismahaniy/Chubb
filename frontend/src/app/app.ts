@@ -13,7 +13,7 @@ import { ToastList } from './shared/ui/toast-list';
 const NAV_LINKS: Record<Role, readonly NavLink[]> = {
   Claimant: [{ label: 'My claims', path: ROLE_HOME.Claimant }],
   Officer: [{ label: 'Work queue', path: ROLE_HOME.Officer }],
-  Manager: [{ label: 'Overview', path: ROLE_HOME.Manager }],
+  Manager: [{ label: 'Dashboard', path: ROLE_HOME.Manager }],
 };
 
 @Component({

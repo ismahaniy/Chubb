@@ -1116,6 +1116,60 @@
           }
         ]
       }
+    },
+    "/api/reports/exposure": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExposureReport"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExposureReport"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExposureReport"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -1380,6 +1434,53 @@
           },
           "reason": {
             "type": "string"
+          }
+        }
+      },
+      "ExposureLine": {
+        "required": [
+          "market",
+          "productType",
+          "openClaims",
+          "exposure"
+        ],
+        "type": "object",
+        "properties": {
+          "market": {
+            "$ref": "#/components/schemas/Market"
+          },
+          "productType": {
+            "$ref": "#/components/schemas/ProductType"
+          },
+          "openClaims": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "exposure": {
+            "$ref": "#/components/schemas/MoneyDto"
+          }
+        }
+      },
+      "ExposureReport": {
+        "required": [
+          "asOf",
+          "lines"
+        ],
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExposureLine"
+            }
           }
         }
       },
@@ -1788,6 +1889,9 @@
     },
     {
       "name": "OfficerClaims"
+    },
+    {
+      "name": "Reports"
     }
   ]
 }

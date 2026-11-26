@@ -38,6 +38,9 @@ public sealed class PostgresFixture : IAsyncLifetime
     public ClaimsDbContext CreateDbContext() =>
         new(_scope.ServiceProvider.GetRequiredService<DbContextOptions<ClaimsDbContext>>());
 
+    /// <summary>A scope over the real AddInfrastructure registrations, to resolve repositories as the API does.</summary>
+    public AsyncServiceScope CreateScope() => _services.CreateAsyncScope();
+
     public async Task MigrateAsync(CancellationToken cancellationToken)
     {
         await using var db = CreateDbContext();

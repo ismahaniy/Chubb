@@ -305,3 +305,26 @@ Content-Type: application/json
   "outcome": "Rejected",
   "reason": "Gradual leaks are excluded by the policy wording."
 }
+
+# ======================================================================
+# Manager reports. Read-only; officers and claimants get 403.
+# "Open" = not yet Rejected or Settled (Approved-but-unpaid counts).
+# ======================================================================
+
+### Log in as the manager
+# @name manager
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "manager@claimdesk.test",
+  "password": "Passw0rd!"
+}
+
+### Exposure: one line per market, product and currency (reserve, else claimed amount). Never summed across currencies.
+GET {{api}}/api/reports/exposure
+Authorization: Bearer {{manager.response.body.accessToken}}
+
+### officer1 reading a report: 403
+GET {{api}}/api/reports/exposure
+Authorization: Bearer {{officer1.response.body.accessToken}}

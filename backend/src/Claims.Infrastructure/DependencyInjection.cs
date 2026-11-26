@@ -1,8 +1,11 @@
 using Claims.Application.Auth;
+using Claims.Application.Claims;
 using Claims.Application.Common;
+using Claims.Infrastructure.Claims;
 using Claims.Infrastructure.Health;
 using Claims.Infrastructure.Outbox;
 using Claims.Infrastructure.Persistence;
+using Claims.Infrastructure.Policies;
 using Claims.Infrastructure.Security;
 using Claims.Infrastructure.Users;
 using Confluent.Kafka;
@@ -31,6 +34,8 @@ public static class DependencyInjection
             .UseAsyncSeeding(DbSeeder.SeedAsync));
 
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IPolicyRepository, PolicyRepository>();
+        services.AddScoped<IClaimRepository, ClaimRepository>();
         services.AddScoped<IOutbox, EfOutbox>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IPasswordVerifier, PasswordVerifier>();

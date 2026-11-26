@@ -30,3 +30,117 @@ X-Correlation-Id: demo-wrong-password
   "email": "officer1@claimdesk.test",
   "password": "wrong"
 }
+
+# ======================================================================
+# Claimant slice. Run top to bottom. Dates use the VS Code REST Client
+# {{$localDatetime}} helper; in other clients type a recent yyyy-MM-dd date.
+# ======================================================================
+
+### Log in as claimant1 (holds POL-SG-0001 Motor, POL-SG-0002 Property, POL-MY-*, POL-ID-0001)
+# @name claimant1
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "claimant1@claimdesk.test",
+  "password": "Passw0rd!"
+}
+
+### Submit a motor claim on POL-SG-0001: 201 + Location, status Submitted, event staged in the outbox
+# @name submitted
+POST {{api}}/api/claims
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+Content-Type: application/json
+X-Correlation-Id: demo-submit-1
+
+{
+  "policyNumber": "POL-SG-0001",
+  "productType": "Motor",
+  "incidentDate": "{{$localDatetime 'YYYY-MM-DD' -1 d}}",
+  "description": "Rear-ended at a junction; bumper and tail lamp damaged.",
+  "claimedAmount": 1250.50,
+  "currency": "SGD"
+}
+
+### My claims, newest first
+# @name mine
+GET {{api}}/api/claims/mine
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+
+### One claim with timeline and open information requests
+GET {{api}}/api/claims/{{submitted.response.body.id}}
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+
+### Product the policy does not cover: 409 ProblemDetails
+POST {{api}}/api/claims
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "policyNumber": "POL-SG-0001",
+  "productType": "Property",
+  "incidentDate": "{{$localDatetime 'YYYY-MM-DD' -1 d}}",
+  "description": "Kitchen flooded.",
+  "claimedAmount": 800.00,
+  "currency": "SGD"
+}
+
+### Missing fields: 400 validation ProblemDetails
+POST {{api}}/api/claims
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "policyNumber": "POL-SG-0001"
+}
+
+### Log in as claimant2
+# @name claimant2
+POST {{api}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "claimant2@claimdesk.test",
+  "password": "Passw0rd!"
+}
+
+### claimant2 reading claimant1's claim: 403 ProblemDetails
+GET {{api}}/api/claims/{{submitted.response.body.id}}
+Authorization: Bearer {{claimant2.response.body.accessToken}}
+
+### claimant2 claiming on claimant1's policy: 404 (indistinguishable from an unknown policy)
+POST {{api}}/api/claims
+Authorization: Bearer {{claimant2.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "policyNumber": "POL-SG-0001",
+  "productType": "Motor",
+  "incidentDate": "{{$localDatetime 'YYYY-MM-DD' -1 d}}",
+  "description": "Not my policy.",
+  "claimedAmount": 100.00,
+  "currency": "SGD"
+}
+
+### Unknown claim: 404 ProblemDetails
+GET {{api}}/api/claims/00000000-0000-0000-0000-000000000001
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+
+### Answering an information request.
+# claimant1 has one seeded claim in AwaitingInformation (POL-MY-0001, windscreen).
+# Paste its id from the "My claims" response above (the entry with "status": "AwaitingInformation").
+@awaitingClaimId = paste-claim-id-here
+
+# @name awaiting
+GET {{api}}/api/claims/{{awaitingClaimId}}
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+
+### Answer the open request: 200, status back to UnderReview, InformationProvided in the outbox.
+# Sending it a second time gives 409 (the claim is no longer awaiting information).
+POST {{api}}/api/claims/{{awaitingClaimId}}/information-requests/{{awaiting.response.body.openInformationRequests[0].id}}/response
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "answer": "Police report reference PR-2026-0415."
+}

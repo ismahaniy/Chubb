@@ -46,6 +46,10 @@ Content-Type: application/json
   "password": "Passw0rd!"
 }
 
+### My policies, to submit a claim against: product type, currency and maximum payable per policy
+GET {{api}}/api/policies/mine
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+
 ### Submit a motor claim on POL-SG-0001: 201 + Location, status Submitted, event staged in the outbox
 # @name submitted
 POST {{api}}/api/claims

@@ -1170,6 +1170,69 @@
         ]
       }
     },
+    "/api/policies/mine": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PolicySummary"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PolicySummary"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PolicySummary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/reports/exposure": {
       "get": {
         "tags": [
@@ -1776,6 +1839,43 @@
           }
         }
       },
+      "PolicySummary": {
+        "required": [
+          "policyNumber",
+          "market",
+          "productType",
+          "currency",
+          "maxPayable",
+          "startDate",
+          "endDate"
+        ],
+        "type": "object",
+        "properties": {
+          "policyNumber": {
+            "type": "string"
+          },
+          "market": {
+            "$ref": "#/components/schemas/Market"
+          },
+          "productType": {
+            "$ref": "#/components/schemas/ProductType"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "maxPayable": {
+            "$ref": "#/components/schemas/MoneyDto"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -2095,6 +2195,9 @@
     },
     {
       "name": "OfficerClaims"
+    },
+    {
+      "name": "Policies"
     },
     {
       "name": "Reports"

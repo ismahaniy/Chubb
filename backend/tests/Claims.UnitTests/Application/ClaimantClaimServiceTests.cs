@@ -101,6 +101,23 @@ public sealed class ClaimantClaimServiceTests
         });
     }
 
+    [Fact]
+    public async Task Policies_are_listed_for_the_signed_in_claimant_only()
+    {
+        IReadOnlyList<PolicySummary> owned =
+        [
+            new("POL-SG-0001", Market.Singapore, ProductType.Motor, Currency, new MoneyDto(9_500m, Currency),
+                new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31)),
+        ];
+        _policies.ListForHolderAsync(ClaimantId, Arg.Any<CancellationToken>()).Returns(owned);
+
+        (await _service.ListMyPoliciesAsync(Owner, Ct)).ShouldBe(owned);
+
+        await _service.ListMyPoliciesAsync(OtherClaimant, Ct);
+        await _policies.Received(1).ListForHolderAsync(OtherClaimant.UserId, Arg.Any<CancellationToken>());
+        await _policies.Received(1).ListForHolderAsync(ClaimantId, Arg.Any<CancellationToken>());
+    }
+
     private static SubmitClaimRequest NewRequest(string policyNumber) =>
         new(policyNumber, ProductType.Motor, IncidentDate, "Rear-ended", 1_000m, Currency);
 

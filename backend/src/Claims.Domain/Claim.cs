@@ -12,6 +12,7 @@ public sealed class Claim
     private readonly List<IDomainEvent> _domainEvents = [];
 
     public Guid Id { get; private set; }
+    public string ClaimNumber { get; private set; } = null!;
     public Guid PolicyId { get; private set; }
     public Guid ClaimantId { get; private set; }
     public Market Market { get; private set; }
@@ -41,6 +42,7 @@ public sealed class Claim
     }
 
     public static Claim Submit(
+        string claimNumber,
         Policy policy,
         Guid claimantId,
         DateOnly incidentDate,
@@ -71,6 +73,7 @@ public sealed class Claim
         var claim = new Claim
         {
             Id = Guid.CreateVersion7(),
+            ClaimNumber = Required(claimNumber, nameof(claimNumber)),
             PolicyId = policy.Id,
             ClaimantId = claimantId,
             Market = policy.Market,

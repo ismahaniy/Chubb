@@ -6,6 +6,7 @@ namespace Claims.UnitTests.Domain;
 internal static class ClaimTestData
 {
     public const string Currency = "SGD";
+    public const string ClaimNumber = "CLM-000001";
 
     public static readonly Guid ClaimantId = Guid.CreateVersion7();
     public static readonly Guid OfficerId = Guid.CreateVersion7();
@@ -26,7 +27,7 @@ internal static class ClaimTestData
     public static Money Money(decimal amount) => new(amount, Currency);
 
     public static Claim SubmittedClaim() =>
-        Claim.Submit(Policy(), ClaimantId, IncidentDate, "Rear-ended at a junction", Money(3_000m), Now);
+        Claim.Submit(ClaimNumber, Policy(), ClaimantId, IncidentDate, "Rear-ended at a junction", Money(3_000m), Now);
 
     /// <summary>
     /// A claim in <paramref name="status"/> reached by the legal path. Claims at UnderReview or beyond

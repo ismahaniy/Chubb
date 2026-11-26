@@ -12,9 +12,10 @@ public sealed class ClaimRuleTests
     {
         var policy = Policy();
 
-        var claim = Claim.Submit(policy, ClaimantId, IncidentDate, "  Hail damage  ", Money(3_000m), Now);
+        var claim = Claim.Submit(ClaimNumber, policy, ClaimantId, IncidentDate, "  Hail damage  ", Money(3_000m), Now);
 
         claim.Status.ShouldBe(ClaimStatus.Submitted);
+        claim.ClaimNumber.ShouldBe(ClaimNumber);
         claim.PolicyId.ShouldBe(policy.Id);
         claim.Market.ShouldBe(Market.Singapore);
         claim.ProductType.ShouldBe(ProductType.Motor);
@@ -34,36 +35,43 @@ public sealed class ClaimRuleTests
     [Fact]
     public void Submit_by_someone_other_than_policy_holder_throws() =>
         Should.Throw<DomainException>(() =>
-            Claim.Submit(Policy(), Guid.CreateVersion7(), IncidentDate, "x", Money(100m), Now));
+            Claim.Submit(ClaimNumber, Policy(), Guid.CreateVersion7(), IncidentDate, "x", Money(100m), Now));
 
     [Theory]
     [InlineData(2025, 12, 31)]
     [InlineData(2027, 1, 1)]
     public void Submit_outside_policy_period_throws(int y, int m, int d) =>
         Should.Throw<DomainException>(() =>
-            Claim.Submit(Policy(), ClaimantId, new DateOnly(y, m, d), "x", Money(100m), Now));
+            Claim.Submit(ClaimNumber, Policy(), ClaimantId, new DateOnly(y, m, d), "x", Money(100m), Now));
 
     [Fact]
     public void Submit_in_other_currency_throws() =>
         Should.Throw<DomainException>(() =>
-            Claim.Submit(Policy(), ClaimantId, IncidentDate, "x", new Money(100m, "HKD"), Now));
+            Claim.Submit(ClaimNumber, Policy(), ClaimantId, IncidentDate, "x", new Money(100m, "HKD"), Now));
 
     [Fact]
     public void Submit_zero_amount_throws() =>
         Should.Throw<DomainException>(() =>
-            Claim.Submit(Policy(), ClaimantId, IncidentDate, "x", Money(0m), Now));
+            Claim.Submit(ClaimNumber, Policy(), ClaimantId, IncidentDate, "x", Money(0m), Now));
 
     [Fact]
     public void Submit_blank_description_throws() =>
         Should.Throw<DomainException>(() =>
-            Claim.Submit(Policy(), ClaimantId, IncidentDate, "   ", Money(100m), Now));
+            Claim.Submit(ClaimNumber, Policy(), ClaimantId, IncidentDate, "   ", Money(100m), Now));
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Submit_blank_claim_number_throws(string claimNumber) =>
+        Should.Throw<DomainException>(() =>
+            Claim.Submit(claimNumber, Policy(), ClaimantId, IncidentDate, "x", Money(100m), Now));
 
     [Fact]
     public void Times_are_stored_in_utc()
     {
         var local = new DateTimeOffset(2026, 3, 1, 17, 0, 0, TimeSpan.FromHours(8));
 
-        var claim = Claim.Submit(Policy(), ClaimantId, IncidentDate, "x", Money(100m), local);
+        var claim = Claim.Submit(ClaimNumber, Policy(), ClaimantId, IncidentDate, "x", Money(100m), local);
         claim.Assign(OfficerId, local);
 
         claim.SubmittedAt.Offset.ShouldBe(TimeSpan.Zero);

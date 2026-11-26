@@ -6,5 +6,6 @@
     <ProjectReference Include="..\..\src\Claims.Domain\Claims.Domain.csproj" />
     <ProjectReference Include="..\..\src\Claims.Application\Claims.Application.csproj" />
     <ProjectReference Include="..\..\src\Claims.Infrastructure\Claims.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Claims.Api\Claims.Api.csproj" />
   </ItemGroup>
 </Project>

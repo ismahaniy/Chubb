@@ -74,6 +74,44 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
 
+  api:
+    build:
+      context: ./backend
+      args:
+        PROJECT: Claims.Api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-5000}:8080"
+    environment:
+      # Development: Scalar at /scalar and the demo JWT signing key from appsettings.Development.json.
+      ASPNETCORE_ENVIRONMENT: Development
+      Database__MigrateOnStartup: "true"
+      ConnectionStrings__Claims: Host=postgres;Port=5432;Database=${POSTGRES_DB:-claims};Username=${POSTGRES_USER:-claims};Password=${POSTGRES_PASSWORD:-claims}
+      Kafka__BootstrapServers: kafka:29092
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  worker:
+    build:
+      context: ./backend
+      args:
+        PROJECT: Claims.Worker
+    depends_on:
+      # The API owns migrations; once it is healthy the schema exists.
+      api:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Claims: Host=postgres;Port=5432;Database=${POSTGRES_DB:-claims};Username=${POSTGRES_USER:-claims};Password=${POSTGRES_PASSWORD:-claims}
+      Kafka__BootstrapServers: kafka:29092
+
 volumes:
   pgdata:
   kafkadata:

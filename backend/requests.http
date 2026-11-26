@@ -332,3 +332,21 @@ Authorization: Bearer {{manager.response.body.accessToken}}
 ### officer1 reading a report: 403
 GET {{api}}/api/reports/exposure
 Authorization: Bearer {{officer1.response.body.accessToken}}
+
+# ======================================================================
+# Notifications. Written by the Worker from claim events (outbox -> Kafka
+# -> NotificationProjector), so they appear a second or two after each
+# step above. Run the claimant and officer sections first, with the worker up.
+# Any role; each user sees only their own.
+# ======================================================================
+
+### claimant1: received / under review / more info needed / approved / settled, newest first
+GET {{api}}/api/notifications
+Authorization: Bearer {{claimant1.response.body.accessToken}}
+
+### officer1: "the claimant answered your information request"
+GET {{api}}/api/notifications
+Authorization: Bearer {{officer1.response.body.accessToken}}
+
+### No token: 401 ProblemDetails
+GET {{api}}/api/notifications

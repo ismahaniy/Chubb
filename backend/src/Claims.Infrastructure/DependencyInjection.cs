@@ -1,6 +1,7 @@
 using Claims.Application.Auth;
 using Claims.Application.Claims;
 using Claims.Application.Common;
+using Claims.Application.Notifications;
 using Claims.Application.Reports;
 using Claims.Infrastructure.Claims;
 using Claims.Infrastructure.Health;
@@ -40,6 +41,7 @@ public static class DependencyInjection
         services.AddScoped<IPolicyRepository, PolicyRepository>();
         services.AddScoped<IClaimRepository, ClaimRepository>();
         services.AddScoped<IReportRepository, ReportRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IOutbox, EfOutbox>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IPasswordVerifier, PasswordVerifier>();

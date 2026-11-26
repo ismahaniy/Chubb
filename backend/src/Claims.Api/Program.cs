@@ -1,3 +1,4 @@
+using Claims.Api.Observability;
 using Claims.Infrastructure;
 using Claims.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,8 @@ if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
     var db = scope.ServiceProvider.GetRequiredService<ClaimsDbContext>();
     await db.Database.MigrateAsync(app.Lifetime.ApplicationStopping);
 }
+
+app.UseMiddleware<CorrelationIdMiddleware>();
 
 app.MapControllers();
 app.MapHealthChecks("/health");

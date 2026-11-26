@@ -3,7 +3,17 @@
     <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
       <h1 class="text-xl font-semibold tracking-tight">ClaimDesk</h1>
       @if (auth.user(); as user) {
-        <app-nav [user]="user" [links]="links()" (signOut)="signOut()" />
+        <div class="flex items-center gap-4">
+          <app-nav [user]="user" [links]="links()" (signOut)="signOut()" />
+          <app-notification-bell
+            [items]="notifications.items()"
+            [unreadCount]="notifications.unreadCount()"
+            [failed]="notifications.failed()"
+            [selectable]="claimPath() !== null"
+            (closed)="notifications.markAllRead()"
+            (select)="openClaim($event)"
+          />
+        </div>
       }
     </div>
   </header>

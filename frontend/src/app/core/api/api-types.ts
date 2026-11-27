@@ -457,6 +457,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MarkNotificationsReadRequest"];
+                    "text/json": components["schemas"]["MarkNotificationsReadRequest"];
+                    "application/*+json": components["schemas"]["MarkNotificationsReadRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ValidationProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/claims/queue": {
         parameters: {
             query?: never;
@@ -947,6 +1004,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/policies/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PolicySummary"][];
+                        "application/json": components["schemas"]["PolicySummary"][];
+                        "text/json": components["schemas"]["PolicySummary"][];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/exposure": {
         parameters: {
             query?: never;
@@ -1162,6 +1274,10 @@ export interface components {
         };
         /** @enum {unknown} */
         Market: "Singapore" | "HongKong" | "Malaysia" | "Thailand" | "Indonesia" | "Philippines";
+        MarkNotificationsReadRequest: {
+            /** Format: date-time */
+            upTo: null | string;
+        };
         MoneyDto: {
             /** Format: double */
             amount: number | string;
@@ -1188,6 +1304,17 @@ export interface components {
             slaBreaches: number | string;
             /** Format: int32 */
             settledLast7Days: number | string;
+        };
+        PolicySummary: {
+            policyNumber: string;
+            market: components["schemas"]["Market"];
+            productType: components["schemas"]["ProductType"];
+            currency: string;
+            maxPayable: components["schemas"]["MoneyDto"];
+            /** Format: date */
+            startDate: string;
+            /** Format: date */
+            endDate: string;
         };
         ProblemDetails: {
             type?: null | string;

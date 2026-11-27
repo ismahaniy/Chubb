@@ -30,7 +30,7 @@ export const routes: Routes = [
   },
   {
     path: 'manager',
-    title: 'Overview · ClaimDesk',
+    title: 'Dashboard · ClaimDesk',
     canMatch: [roleGuard('Manager')],
     loadChildren: () => import('./features/manager/manager.routes').then((m) => m.managerRoutes),
   },

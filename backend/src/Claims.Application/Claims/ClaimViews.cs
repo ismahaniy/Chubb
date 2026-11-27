@@ -40,3 +40,16 @@ public sealed record DecisionDto(DecisionOutcome Outcome, MoneyDto? ApprovedAmou
 public sealed record StatusChangeDto(ClaimStatus? FromStatus, ClaimStatus ToStatus, DateTimeOffset ChangedAt);
 
 public sealed record InformationRequestDto(Guid Id, string Question, DateTimeOffset RequestedAt);
+
+/// <summary>
+/// One of the claimant's policies, offered when submitting a claim. Product type and currency are what the claim must
+/// match; MaxPayable is the coverage limit less the deductible.
+/// </summary>
+public sealed record PolicySummary(
+    string PolicyNumber,
+    Market Market,
+    ProductType ProductType,
+    string Currency,
+    MoneyDto MaxPayable,
+    DateOnly StartDate,
+    DateOnly EndDate);

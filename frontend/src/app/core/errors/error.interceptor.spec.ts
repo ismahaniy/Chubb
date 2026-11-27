@@ -1,11 +1,11 @@
-import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpClient, HttpContext, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { authInterceptor } from '../auth/auth.interceptor';
 import { AuthStore } from '../auth/auth.store';
 import { session, storeSession } from '../auth/testing';
-import { errorInterceptor } from './error.interceptor';
+import { SILENT_ERRORS, errorInterceptor } from './error.interceptor';
 import { ToastStore } from './toast.store';
 
 describe('errorInterceptor', () => {
@@ -94,5 +94,30 @@ describe('errorInterceptor', () => {
 
     expect(auth.isAuthenticated()).toBe(false);
     expect(navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  describe('with SILENT_ERRORS', () => {
+    const silent = () => ({ context: new HttpContext().set(SILENT_ERRORS, true) });
+
+    it('rethrows without a toast', () => {
+      const { http, backend, toasts } = setUp(true);
+      let failed = false;
+      http.get('/api/notifications', silent()).subscribe({ error: () => (failed = true) });
+      backend.expectOne('/api/notifications').error(new ProgressEvent('error'), { status: 0 });
+
+      expect(failed).toBe(true);
+      expect(toasts.toasts()).toEqual([]);
+    });
+
+    it('still ends the session on a 401', () => {
+      const { http, backend, auth, navigate } = setUp(true);
+      http.get('/api/notifications', silent()).subscribe({ error: () => undefined });
+      backend
+        .expectOne('/api/notifications')
+        .flush(null, { status: 401, statusText: 'Unauthorized' });
+
+      expect(auth.isAuthenticated()).toBe(false);
+      expect(navigate).toHaveBeenCalledWith(['/login']);
+    });
   });
 });

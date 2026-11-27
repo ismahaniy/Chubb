@@ -42,6 +42,10 @@ public sealed class ClaimantClaimService(
         return await ReadDetailAsync(claim.Id, cancellationToken);
     }
 
+    /// <summary>Always the actor's own policies: the holder comes from the token, never from the request.</summary>
+    public Task<IReadOnlyList<PolicySummary>> ListMyPoliciesAsync(Actor actor, CancellationToken cancellationToken) =>
+        policies.ListForHolderAsync(actor.UserId, cancellationToken);
+
     public Task<IReadOnlyList<ClaimSummary>> ListMineAsync(Actor actor, CancellationToken cancellationToken) =>
         claims.ListSummariesByClaimantAsync(actor.UserId, cancellationToken);
 

@@ -15,4 +15,14 @@ public sealed class NotificationsController(NotificationService notifications) :
     [ProducesResponseType<IReadOnlyList<NotificationView>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<NotificationView>>> Mine(CancellationToken cancellationToken) =>
         Ok(await notifications.ListMineAsync(User.ToActor(), cancellationToken));
+
+    /// <summary>Marks the signed-in user's notifications created at or before <c>upTo</c> as read. Idempotent.</summary>
+    [HttpPost("read")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    public async Task<IActionResult> MarkRead(MarkNotificationsReadRequest request, CancellationToken cancellationToken)
+    {
+        await notifications.MarkReadAsync(User.ToActor(), request, cancellationToken);
+        return NoContent();
+    }
 }

@@ -537,6 +537,63 @@
         ]
       }
     },
+    "/api/notifications/read": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkNotificationsReadRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkNotificationsReadRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkNotificationsReadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/claims/queue": {
       "get": {
         "tags": [
@@ -1170,6 +1227,69 @@
         ]
       }
     },
+    "/api/policies/mine": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PolicySummary"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PolicySummary"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PolicySummary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/reports/exposure": {
       "get": {
         "tags": [
@@ -1679,6 +1799,21 @@
           "Philippines"
         ]
       },
+      "MarkNotificationsReadRequest": {
+        "required": [
+          "upTo"
+        ],
+        "type": "object",
+        "properties": {
+          "upTo": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "MoneyDto": {
         "required": [
           "amount",
@@ -1773,6 +1908,43 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "PolicySummary": {
+        "required": [
+          "policyNumber",
+          "market",
+          "productType",
+          "currency",
+          "maxPayable",
+          "startDate",
+          "endDate"
+        ],
+        "type": "object",
+        "properties": {
+          "policyNumber": {
+            "type": "string"
+          },
+          "market": {
+            "$ref": "#/components/schemas/Market"
+          },
+          "productType": {
+            "$ref": "#/components/schemas/ProductType"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "maxPayable": {
+            "$ref": "#/components/schemas/MoneyDto"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
           }
         }
       },
@@ -2095,6 +2267,9 @@
     },
     {
       "name": "OfficerClaims"
+    },
+    {
+      "name": "Policies"
     },
     {
       "name": "Reports"
